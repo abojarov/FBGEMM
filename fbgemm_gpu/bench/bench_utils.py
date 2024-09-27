@@ -157,6 +157,7 @@ def benchmark_requests(
     # Can be used to clear model's stats after warmup for example.
     callback_after_warmup: Optional[Callable[[], None]] = None,
     periodic_logs: bool = False,
+    return_vectors: bool = False,
 ) -> float:
     times = []
 
@@ -234,7 +235,12 @@ def benchmark_requests(
 
     avg_time = sum(times) / len(requests)
     median_time = statistics.median(times)
-    return median_time if check_median else avg_time
+    if return_vectors:
+        if check_median:
+            return check_median, times
+        else:
+            return avg_time, times
+    return (median_time if check_median else avg_time), []
 
 
 def benchmark_requests_refer(

@@ -138,6 +138,7 @@ def cli() -> None:
     "--ssd-prefix", type=str, default="/tmp/ssd_benchmark", help="SSD directory prefix"
 )
 @click.option("--cache-load-factor", default=0.2)
+@click.option("--return-vectors", default=False)
 def device(  # noqa C901
     alpha: float,
     bag_size: int,
@@ -168,6 +169,7 @@ def device(  # noqa C901
     ssd: bool,
     ssd_prefix: str,
     cache_load_factor: float,
+    return_vectors: bool
 ) -> None:
     assert not ssd or not dense, "--ssd cannot be used together with --dense"
     np.random.seed(42)
@@ -339,7 +341,7 @@ def device(  # noqa C901
 
     with context_factory(lambda p: _kineto_trace_handler(p, "fwd")):
         # forward
-        time_per_iter = benchmark_requests(
+        time_per_iter, times = benchmark_requests(
             requests,
             lambda indices, offsets, per_sample_weights: emb.forward(
                 indices.long(),
@@ -349,6 +351,7 @@ def device(  # noqa C901
             ),
             flush_gpu_cache_size_mb=flush_gpu_cache_size_mb,
             num_warmups=warmup_runs,
+            return_vectors=return_vectors
         )
 
     logging.info(
@@ -357,6 +360,8 @@ def device(  # noqa C901
         f"BW: {read_write_bytes / time_per_iter / 1.0e9: .2f} GB/s, "  # noqa: B950
         f"T: {time_per_iter * 1.0e6:.0f}us"
     )
+    if return_vectors:
+        logging.info(f"Forward times: {times}")
 
     if output_dtype == SparseType.INT8:
         # backward bench not representative
@@ -369,7 +374,7 @@ def device(  # noqa C901
 
     with context_factory(lambda p: _kineto_trace_handler(p, "fwd_bwd")):
         # backward
-        time_per_iter = benchmark_requests(
+        time_per_iter, times = benchmark_requests(
             requests,
             lambda indices, offsets, per_sample_weights: emb(
                 indices.long(),
@@ -381,6 +386,7 @@ def device(  # noqa C901
             bwd_only=True,
             grad=grad_output,
             num_warmups=warmup_runs,
+            return_vectors=return_vectors
         )
 
     logging.info(
@@ -388,6 +394,8 @@ def device(  # noqa C901
         f"BW: {2 * read_write_bytes / time_per_iter / 1.0e9: .2f} GB/s, "
         f"T: {time_per_iter * 1.0e6:.0f}us"
     )
+    if return_vectors:
+        logging.info(f"Backward times: {times}")
 
 
 @cli.command()
