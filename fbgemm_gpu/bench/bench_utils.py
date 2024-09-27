@@ -156,6 +156,7 @@ def benchmark_requests(
     nvtx_range: str = "",
     # Can be used to clear model's stats after warmup for example.
     callback_after_warmup: Optional[Callable[[], None]] = None,
+    return_vectors: bool = False,
 ) -> float:
     times = []
 
@@ -215,7 +216,12 @@ def benchmark_requests(
             times.append(it_time)
     avg_time = sum(times) / len(requests)
     median_time = statistics.median(times)
-    return median_time if check_median else avg_time
+    if return_vectors:
+        if check_median:
+            return check_median, times
+        else:
+            return avg_time, times
+    return (median_time if check_median else avg_time), []
 
 
 def benchmark_requests_refer(

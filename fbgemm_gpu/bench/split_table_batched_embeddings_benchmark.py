@@ -342,6 +342,7 @@ def device(  # noqa C901
 @click.option("--enforce-hbm", is_flag=True, default=False)
 @click.option("--no-conflict-misses", is_flag=True, default=False)
 @click.option("--all-conflict-misses", is_flag=True, default=False)
+@click.option("--return-vectors", default=False)
 def uvm(
     alpha: bool,
     bag_size: int,
@@ -370,6 +371,7 @@ def uvm(
     no_conflict_misses: bool,
     # Simulate a UVM cache with a cache conflict miss rate of 100%
     all_conflict_misses: bool,
+    return_vectors: bool
 ) -> None:
     np.random.seed(42)
     torch.manual_seed(42)
@@ -599,12 +601,13 @@ def uvm(
             requests.append(TBERequest(indices, offsets, per_sample_weights))
 
         # forward
-        time_per_iter = benchmark_requests(
+        time_per_iter, times = benchmark_requests(
             requests_gpu,
             lambda indices, offsets, per_sample_weights: emb_gpu.forward(
                 indices.long(),
                 offsets.long(),
                 per_sample_weights,
+                return_vectors=return_vectors
             ),
             flush_gpu_cache_size_mb=flush_gpu_cache_size_mb,
             num_warmups=warmup_runs,
@@ -619,13 +622,16 @@ def uvm(
             f"BW: {read_write_bytes_hbm / time_per_iter / 1.0e9: .2f} GB/s, "  # noqa: B950
             f"T: {time_per_iter * 1.0e6:.0f}us"
         )
+        if return_vectors:
+            logging.info(f"Forward times: {times}")
 
-        time_per_iter = benchmark_requests(
+        time_per_iter, times = benchmark_requests(
             requests,
             lambda indices, offsets, per_sample_weights: emb_mixed.forward(
                 indices.long(),
                 offsets.long(),
                 per_sample_weights,
+                return_vectors=return_vectors
             ),
             flush_gpu_cache_size_mb=flush_gpu_cache_size_mb,
             num_warmups=warmup_runs,
@@ -637,7 +643,9 @@ def uvm(
             f"BW: {read_write_bytes_total / time_per_iter / 1.0e9: .2f} GB/s, "  # noqa: B950
             f"T: {time_per_iter * 1.0e6:.0f}us"
         )
-
+        if return_vectors:
+            logging.info(f"Backward times: {times}")
+            
 
 @cli.command()
 @click.option("--alpha", default=1.0)
