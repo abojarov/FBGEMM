@@ -50,7 +50,7 @@ from torch import SymInt, Tensor
 
 
 if hasattr(torch.library, "impl_abstract"):
-    impl_abstract = torch.library.impl_abstract
+    impl_abstract = torch.library.register_fake
 else:
     # pyre-ignore
     def impl_abstract(schema: str) -> Callable[[Callable], Callable]:
