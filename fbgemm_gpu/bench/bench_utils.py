@@ -156,7 +156,8 @@ def benchmark_requests(
     nvtx_range: str = "",
     # Can be used to clear model's stats after warmup for example.
     callback_after_warmup: Optional[Callable[[], None]] = None,
-    return_vectors: bool = False,
+    cd: bool = False,
+    return_vectors: bool = False
 ) -> float:
     times = []
 
