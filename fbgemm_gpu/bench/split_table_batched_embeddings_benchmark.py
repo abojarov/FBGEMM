@@ -357,6 +357,7 @@ def device(  # noqa C901
     logging.info(
         f"Forward, B: {B}, "
         f"E: {E}, T: {T}, D: {D}, L: {L}, W: {weighted}, "
+        f"RW: {read_write_bytes / 1.0e6: .2f} MB, "
         f"BW: {read_write_bytes / time_per_iter / 1.0e9: .2f} GB/s, "  # noqa: B950
         f"T: {time_per_iter * 1.0e6:.0f}us"
     )
@@ -391,6 +392,7 @@ def device(  # noqa C901
 
     logging.info(
         f"Backward, B: {B}, E: {E}, T: {T}, D: {D}, L: {L}, "
+        f"RW: {2 * read_write_bytes / 1.0e6: .2f} MB, "
         f"BW: {2 * read_write_bytes / time_per_iter / 1.0e9: .2f} GB/s, "
         f"T: {time_per_iter * 1.0e6:.0f}us"
     )
