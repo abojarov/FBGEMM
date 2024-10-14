@@ -480,6 +480,7 @@ def uvm(
 
     cache_alg = CacheAlgorithm.LRU if cache_algorithm == "lru" else CacheAlgorithm.LFU
     managed_type = (
+
         EmbeddingLocation.MANAGED_CACHING if use_cache else EmbeddingLocation.MANAGED
     )
 
