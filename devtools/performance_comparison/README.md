@@ -92,3 +92,10 @@ python3 parse_benchmarks.py ~/work/benchmarks/benchmark_00
 ```
 
 and the output is located in the folder `benchmark_00`.
+
+
+## Testing `09122024_fwd_bwd_optimized`
+
+```
+git clone --recursive -b 09132024_upstream_fwd_bwd_optimized git@github.com:avbokovoy/FBGEMM.git FBGEMM_fbopt
+```

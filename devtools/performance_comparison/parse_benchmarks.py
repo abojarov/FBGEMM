@@ -155,33 +155,38 @@ def main(BENCH_FOLDER: str):
             bs_li[-1].append(bs)
             md_str += f"|{str((i,j)):>{align_size}}|{str(bdl.param_dict['alpha']):>{align_size}}|{str(bdl.param_dict['output_t']):>{align_size}}|{str(bdl.param_dict['emb_dim']):>{align_size}}|{str(bdl.param_dict['bag_size']):>{align_size}}|{fwd_mean:>{align_size}}|{fwd_stdev:>{align_size}}|{bwd_mean:>{align_size}}|{bwd_stdev:>{align_size}}|\n"
 
+    def plot_data(std_li, mean_li, title, image_file_name):
+        y0=[i for i in range(16)]
+        x0=mean_li[0]
+        xerr0=[2.0*fs for fs in std_li[0]]
 
-    y0=[i for i in range(16)]
-    x0=fm_li[0]
-    xerr0=[2.0*fs for fs in fs_li[0]]
+        y1=[i for i in range(16)]
+        x1=mean_li[1]
+        xerr1=[2.0*fs for fs in std_li[1]]
 
-    y1=[i for i in range(16)]
-    x1=fm_li[1]
-    xerr1=[2.0*fs for fs in fs_li[1]]
+        fig, (ax0) = plt.subplots(nrows=1, sharex=True)
+        fig.set_figwidth(15)
+        fig.set_figheight(10)
+        ax0.errorbar(x0, y0, xerr=xerr0, fmt='o', capsize=7, label=f"{Data.data_list[0].current_branch}")
+        ax0.errorbar(x1, y1, xerr=xerr1, fmt='o', capsize=7, label=f"{Data.data_list[1].current_branch}")
+        ax0.legend()
+        ax0.grid(which='minor', linestyle="--")
+        ax0.grid(which='major', linestyle="-")
+        ax0.set_title(title)
+        ax0.set_ylabel('Second index from data table')
+        ax0.set_xlabel('RW speed [GB/s]')
+        ax0.set_yticks([2*i for i in range(8)])
+        ax0.set_yticks([2*i+1 for i in range(8)], minor=True)
+        plt.savefig(f"{BENCH_FOLDER}/{image_file_name}", dpi=200)
+        plt.show()
+        
+    plot_data(fs_li, fm_li, "Forward performance comparison", "image01.png")
+    md_str += f"\n\n## Forward performance comparison\n\n"
+    md_str += f"![img](./image01.png)\n"
 
-    fig, (ax0) = plt.subplots(nrows=1, sharex=True)
-    fig.set_figwidth(10)
-    fig.set_figheight(10)
-    ax0.errorbar(x0, y0, xerr=xerr0, fmt='o', capsize=7, label=f"{Data.data_list[0].current_branch}")
-    ax0.errorbar(x1, y1, xerr=xerr1, fmt='o', capsize=7, label=f"{Data.data_list[1].current_branch}")
-    ax0.legend()
-    ax0.grid(which='minor', linestyle="--")
-    ax0.grid(which='major', linestyle="-")
-    ax0.set_title('Forward performance comparison')
-    ax0.set_ylabel('Second index from data table')
-    ax0.set_xlabel('RW speed [GB/s]')
-    ax0.set_yticks([2*i for i in range(8)])
-    ax0.set_yticks([2*i+1 for i in range(8)], minor=True)
-    plt.savefig(f"{BENCH_FOLDER}/image01.png", dpi=200)
-    plt.show()
-
-    md_str += "\n\n## Forward comparison\n\n"
-    md_str += "![img](./image01.png)\n"
+    plot_data(bs_li, bm_li, "Backward performance comparison", "image02.png")
+    md_str += f"\n\n## Backward performance comparison\n\n"
+    md_str += f"![img](./image02.png)\n"
 
     with open(f"{BENCH_FOLDER}/output.md", "w") as text_file:
         text_file.write(md_str)   
@@ -191,7 +196,7 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
     home = Path.home()
-    BENCH_FOLDER=f"{home}/work/benchmarks/benchmark_02"
+    BENCH_FOLDER=f"{home}/work/benchmarks/benchmark_04"
     if len(sys.argv) > 1:
         BENCH_FOLDER=sys.argv[1]
     print(f"Running parse_benchmarks with folder `{BENCH_FOLDER}`")
