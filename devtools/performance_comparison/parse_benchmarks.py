@@ -122,12 +122,16 @@ def main(BENCH_FOLDER: str):
     """
 
 
-    align_size = 15
+    align_size = 18
 
     fm_li = []
     fs_li = []
     bm_li = []
     bs_li = []
+    fs_percent_li = []
+    fm_percent_li = []
+    bs_percent_li = []
+    bm_percent_li = []
 
     for i, dl in enumerate(Data.data_list):
         fm_li.append([])
@@ -135,16 +139,26 @@ def main(BENCH_FOLDER: str):
         bm_li.append([])
         bs_li.append([])
         md_str += f"\n\n## Data {i}: `{dl.current_branch}`\n\n"
-        md_str += f"|{'id':^{align_size}}|{'alpha':^{align_size}}|{'output_t':^{align_size}}|{'emb_dim':^{align_size}}|{'bag_size':^{align_size}}|{'fwd_mean':^{align_size}}|{'fwd_stdev':^{align_size}}|{'bwd_mean':^{align_size}}|{'bwd_stdev':^{align_size}}|\n"
-        md_str += f"|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|\n"
+        if i == 1:
+            fm_percent_li.append([])
+            fs_percent_li.append([])
+            bm_percent_li.append([])
+            bs_percent_li.append([])
+            md_str += f"|{'id':^{align_size}}|{'alpha':^{align_size}}|{'output_t':^{align_size}}|{'emb_dim':^{align_size}}|{'bag_size':^{align_size}}|{'fwd_mean':^{align_size}}|{'fwd_stdev':^{align_size}}|{'bwd_mean':^{align_size}}|{'bwd_stdev':^{align_size}}|{'fwd_mean_percent':^{align_size}}|{'fwd_stdev_percent':^{align_size}}|{'bwd_mean_percent':^{align_size}}|{'bwd_stdev_percent':^{align_size}}|\n"
+            md_str += f"|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|\n"
+        else:
+            md_str += f"|{'id':^{align_size}}|{'alpha':^{align_size}}|{'output_t':^{align_size}}|{'emb_dim':^{align_size}}|{'bag_size':^{align_size}}|{'fwd_mean':^{align_size}}|{'fwd_stdev':^{align_size}}|{'bwd_mean':^{align_size}}|{'bwd_stdev':^{align_size}}|\n"
+            md_str += f"|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|{'-'*align_size}|\n"
         for j, bdl in enumerate(dl.bench_data_list):
             # Normalize time to GB/s
             fw_norm_factor = 1.0e-3*bdl.param_dict['fwd_RW_megabytes']
             bw_norm_factor = 1.0e-3*bdl.param_dict['bwd_RW_megabytes']
-            fs=statistics.stdev([fw_norm_factor/f for f in bdl.fwd_times_list])
-            fm=statistics.mean([fw_norm_factor/f for f in bdl.fwd_times_list])
-            bs=statistics.stdev([bw_norm_factor/b for b in bdl.bwd_times_list])
-            bm=statistics.mean([bw_norm_factor/b for b in bdl.bwd_times_list])
+            freqli = [fw_norm_factor/f for f in bdl.fwd_times_list]
+            fs=statistics.stdev(freqli)
+            fm=statistics.mean(freqli)
+            freqli = [bw_norm_factor/f for f in bdl.bwd_times_list]
+            bs=statistics.stdev(freqli)
+            bm=statistics.mean(freqli)
             fwd_stdev=f"{fs:.6e}"
             fwd_mean=f"{fm:.6e}"
             bwd_stdev=f"{bs:.6e}"
@@ -153,28 +167,50 @@ def main(BENCH_FOLDER: str):
             fs_li[-1].append(fs)
             bm_li[-1].append(bm)
             bs_li[-1].append(bs)
-            md_str += f"|{str((i,j)):>{align_size}}|{str(bdl.param_dict['alpha']):>{align_size}}|{str(bdl.param_dict['output_t']):>{align_size}}|{str(bdl.param_dict['emb_dim']):>{align_size}}|{str(bdl.param_dict['bag_size']):>{align_size}}|{fwd_mean:>{align_size}}|{fwd_stdev:>{align_size}}|{bwd_mean:>{align_size}}|{bwd_stdev:>{align_size}}|\n"
+            if i == 1:
+                freqli = [fw_norm_factor/f for f in bdl.fwd_times_list]
+                fs_percent = statistics.stdev([100.0*((f - fm_li[0][j])/fm_li[0][j]) for f in freqli])
+                fm_percent = statistics.mean([100.0*((f - fm_li[0][j])/fm_li[0][j]) for f in freqli])
+                freqli = [bw_norm_factor/f for f in bdl.bwd_times_list]
+                bs_percent = statistics.stdev([100.0*((f - bm_li[0][j])/bm_li[0][j]) for f in freqli])
+                bm_percent = statistics.mean([100.0*((f - bm_li[0][j])/bm_li[0][j]) for f in freqli])
+                fwd_stdev_percent=f"{fs_percent:2.3f}"
+                fwd_mean_percent=f"{fm_percent:2.3f}"
+                bwd_stdev_percent=f"{bs_percent:2.3f}"
+                bwd_mean_percent=f"{bm_percent:2.3f}"
+                fm_percent_li[-1].append(fm_percent)
+                fs_percent_li[-1].append(fs_percent)
+                bm_percent_li[-1].append(bm_percent)
+                bs_percent_li[-1].append(bs_percent)
+                md_str += f"|{str((i,j)):>{align_size}}|{str(bdl.param_dict['alpha']):>{align_size}}|{str(bdl.param_dict['output_t']):>{align_size}}|{str(bdl.param_dict['emb_dim']):>{align_size}}|{str(bdl.param_dict['bag_size']):>{align_size}}|{fwd_mean:>{align_size}}|{fwd_stdev:>{align_size}}|{bwd_mean:>{align_size}}|{bwd_stdev:>{align_size}}|{fwd_mean_percent:>{align_size}}|{fwd_stdev_percent:>{align_size}}|{bwd_mean_percent:>{align_size}}|{bwd_stdev_percent:>{align_size}}|\n"
+            else:
+                md_str += f"|{str((i,j)):>{align_size}}|{str(bdl.param_dict['alpha']):>{align_size}}|{str(bdl.param_dict['output_t']):>{align_size}}|{str(bdl.param_dict['emb_dim']):>{align_size}}|{str(bdl.param_dict['bag_size']):>{align_size}}|{fwd_mean:>{align_size}}|{fwd_stdev:>{align_size}}|{bwd_mean:>{align_size}}|{bwd_stdev:>{align_size}}|\n"
 
-    def plot_data(std_li, mean_li, title, image_file_name):
+    def plot_data(std_li, mean_li, title, image_file_name, percent=False):
         y0=[i for i in range(16)]
         x0=mean_li[0]
         xerr0=[2.0*fs for fs in std_li[0]]
 
-        y1=[i for i in range(16)]
-        x1=mean_li[1]
-        xerr1=[2.0*fs for fs in std_li[1]]
+        if not percent:
+            y1=[i for i in range(16)]
+            x1=mean_li[1]
+            xerr1=[2.0*fs for fs in std_li[1]]
 
         fig, (ax0) = plt.subplots(nrows=1, sharex=True)
         fig.set_figwidth(15)
         fig.set_figheight(10)
         ax0.errorbar(x0, y0, xerr=xerr0, fmt='o', capsize=7, label=f"{Data.data_list[0].current_branch}")
-        ax0.errorbar(x1, y1, xerr=xerr1, fmt='o', capsize=7, label=f"{Data.data_list[1].current_branch}")
+        if not percent:
+            ax0.errorbar(x1, y1, xerr=xerr1, fmt='o', capsize=7, label=f"{Data.data_list[1].current_branch}")
         ax0.legend()
         ax0.grid(which='minor', linestyle="--")
         ax0.grid(which='major', linestyle="-")
         ax0.set_title(title)
         ax0.set_ylabel('Second index from data table')
-        ax0.set_xlabel('RW speed [GB/s]')
+        if not percent:
+            ax0.set_xlabel('RW speed [GB/s]')
+        else:
+            ax0.set_xlabel('Speed increase [%]')
         ax0.set_yticks([2*i for i in range(8)])
         ax0.set_yticks([2*i+1 for i in range(8)], minor=True)
         plt.savefig(f"{BENCH_FOLDER}/{image_file_name}", dpi=200)
@@ -188,6 +224,14 @@ def main(BENCH_FOLDER: str):
     md_str += f"\n\n## Backward performance comparison\n\n"
     md_str += f"![img](./image02.png)\n"
 
+    plot_data(fs_percent_li, fm_percent_li, "Forward speed increase", "image03.png", percent=True)
+    md_str += f"\n\n## Forward speed increase\n\n"
+    md_str += f"![img](./image03.png)\n"
+
+    plot_data(bs_percent_li, bm_percent_li, "Backward speed increase", "image04.png", percent=True)
+    md_str += f"\n\n## Backward speed increase\n\n"
+    md_str += f"![img](./image04.png)\n"
+
     with open(f"{BENCH_FOLDER}/output.md", "w") as text_file:
         text_file.write(md_str)   
 
@@ -196,7 +240,7 @@ if __name__ == "__main__":
     import sys
     from pathlib import Path
     home = Path.home()
-    BENCH_FOLDER=f"{home}/work/benchmarks/benchmark_04"
+    BENCH_FOLDER=f"{home}/work/benchmarks/benchmark_03"
     if len(sys.argv) > 1:
         BENCH_FOLDER=sys.argv[1]
     print(f"Running parse_benchmarks with folder `{BENCH_FOLDER}`")
